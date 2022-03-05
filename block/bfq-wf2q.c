@@ -1125,6 +1125,11 @@ static void bfq_activate_requeue_entity(struct bfq_entity *entity,
 {
 	for_each_entity(entity) {
 		bfq_update_groups_with_pending_reqs(entity);
+
+		/* root group is not in service tree */
+		if (is_root_entity(entity))
+			break;
+
 		__bfq_activate_requeue_entity(entity, non_blocking_wait_rq);
 
 		if (!bfq_update_next_in_service(entity->sched_data, entity,
