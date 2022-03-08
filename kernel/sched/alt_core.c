@@ -3034,6 +3034,9 @@ void sched_cgroup_fork(struct task_struct *p, struct kernel_clone_args *kargs)
 
 void sched_post_fork(struct task_struct *p)
 {
+#ifdef CONFIG_UCLAMP_TASK
+	uclamp_post_fork(p);
+#endif
 }
 
 #ifdef CONFIG_SCHEDSTATS
