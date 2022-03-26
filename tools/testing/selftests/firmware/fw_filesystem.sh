@@ -211,7 +211,7 @@ read_firmwares()
 	else
 		fwfile="$FW"
 	fi
-	if [ "$1" = "componly" ]; then
+	if [ "$1" = "xzonly" ]; then
 		fwfile="${fwfile}-orig"
 	fi
 	for i in $(seq 0 3); do
@@ -235,7 +235,7 @@ read_partial_firmwares()
 		fwfile="${FW}"
 	fi
 
-	if [ "$1" = "componly" ]; then
+	if [ "$1" = "xzonly" ]; then
 		fwfile="${fwfile}-orig"
 	fi
 
@@ -409,8 +409,10 @@ test_request_firmware_nowait_custom()
 	config_unset_uevent
 	RANDOM_FILE_PATH=$(setup_random_file)
 	RANDOM_FILE="$(basename $RANDOM_FILE_PATH)"
-	if [ -n "$2" -a "$2" != "normal" ]; then
-		compress-"$2"-$COMPRESS_FORMAT $RANDOM_FILE_PATH
+	if [ "$2" = "both" ]; then
+		xz -9 -C crc32 -k $RANDOM_FILE_PATH
+	elif [ "$2" = "xzonly" ]; then
+		xz -9 -C crc32 $RANDOM_FILE_PATH
 	fi
 	config_set_name $RANDOM_FILE
 	config_trigger_async
@@ -486,58 +488,21 @@ test_request_partial_firmware_into_buf_nofile 0 5
 test_request_partial_firmware_into_buf_nofile 1 6
 test_request_partial_firmware_into_buf_nofile 2 10
 
-test_request_firmware_compressed ()
-{
-	export COMPRESS_FORMAT="$1"
+test "$HAS_FW_LOADER_COMPRESS" != "yes" && exit 0
 
-	# test with both files present
-	compress-both-$COMPRESS_FORMAT $FW
-	compress-both-$COMPRESS_FORMAT $FW_INTO_BUF
+# test with both files present
+xz -9 -C crc32 -k $FW
+xz -9 -C crc32 -k $FW_INTO_BUF
+config_set_name $NAME
+echo
+echo "Testing with both plain and xz files present..."
+do_tests both
 
-	config_set_name $NAME
-	echo
-	echo "Testing with both plain and $COMPRESS_FORMAT files present..."
-	do_tests both
-
-	# test with only compressed file present
-	mv "$FW" "${FW}-orig"
-	mv "$FW_INTO_BUF" "${FW_INTO_BUF}-orig"
-
-	config_set_name $NAME
-	echo
-	echo "Testing with only $COMPRESS_FORMAT file present..."
-	do_tests componly
-
-	mv "${FW}-orig" "$FW"
-	mv "${FW_INTO_BUF}-orig" "$FW_INTO_BUF"
-}
-
-compress-both-XZ ()
-{
-	xz -k -9 -C crc32 "$@"
-}
-
-compress-componly-XZ ()
-{
-	xz -9 -C crc32 "$@"
-}
-
-compress-both-ZSTD ()
-{
-	zstd -q -k "$@"
-}
-
-compress-componly-ZSTD ()
-{
-	zstd -q --rm "$@"
-}
-
-if test "$HAS_FW_LOADER_COMPRESS_XZ" = "yes"; then
-	test_request_firmware_compressed XZ
-fi
-
-if test "$HAS_FW_LOADER_COMPRESS_ZSTD" = "yes"; then
-	test_request_firmware_compressed ZSTD
-fi
+# test with only xz file present
+mv "$FW" "${FW}-orig"
+mv "$FW_INTO_BUF" "${FW_INTO_BUF}-orig"
+echo
+echo "Testing with only xz file present..."
+do_tests xzonly
 
 exit 0
