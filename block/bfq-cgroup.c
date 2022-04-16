@@ -436,7 +436,7 @@ void bfq_init_entity(struct bfq_entity *entity, struct bfq_group *bfqg)
 		 */
 		bfqg_and_blkg_get(bfqg);
 	}
-	entity->parent = &bfqg->entity;
+	entity->parent = bfqg->my_entity; /* NULL for root group */
 	entity->sched_data = &bfqg->sched_data;
 }
 
@@ -583,7 +583,7 @@ static void bfq_group_set_parent(struct bfq_group *bfqg,
 	struct bfq_entity *entity;
 
 	entity = &bfqg->entity;
-	entity->parent = &parent->entity;
+	entity->parent = parent->my_entity;
 	entity->sched_data = &parent->sched_data;
 }
 
@@ -687,7 +687,7 @@ void bfq_bfqq_move(struct bfq_data *bfqd, struct bfq_queue *bfqq,
 	else if (bfqd->last_bfqq_created == bfqq)
 		bfqd->last_bfqq_created = NULL;
 
-	entity->parent = &bfqg->entity;
+	entity->parent = bfqg->my_entity;
 	entity->sched_data = &bfqg->sched_data;
 	/* pin down bfqg and its associated blkg  */
 	bfqg_and_blkg_get(bfqg);
