@@ -895,7 +895,7 @@ void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	if (bfqq->wr_coeff != 1) {
 		bfqq->weight_counter = BFQ_FAKE_WEIGHT_COUNTER;
 		bfqq->ref++;
-		return;
+		goto update;
 	}
 
 	while (*new) {
@@ -942,6 +942,14 @@ void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 inc_counter:
 	bfqq->weight_counter->num_active++;
 	bfqq->ref++;
+
+update:
+#ifdef CONFIG_BFQ_GROUP_IOSCHED
+	if (!entity->in_groups_with_pending_reqs) {
+		entity->in_groups_with_pending_reqs = true;
+		bfqq_group(bfqq)->num_entities_with_pending_reqs++;
+	}
+#endif
 }
 
 /*
@@ -969,6 +977,13 @@ void __bfq_weights_tree_remove(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	kfree(bfqq->weight_counter);
 
 reset_entity_pointer:
+#ifdef CONFIG_BFQ_GROUP_IOSCHED
+	if (bfqq->entity.in_groups_with_pending_reqs) {
+		bfqq->entity.in_groups_with_pending_reqs = false;
+		bfqq_group(bfqq)->num_entities_with_pending_reqs--;
+	}
+#endif
+
 	bfqq->weight_counter = NULL;
 	bfq_put_queue(bfqq);
 }
