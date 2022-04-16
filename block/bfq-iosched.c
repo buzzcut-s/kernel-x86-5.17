@@ -4440,7 +4440,7 @@ void bfq_bfqq_expire(struct bfq_data *bfqd,
 	 * service with the same budget.
 	 */
 	entity = entity->parent;
-	for_each_entity_not_root(entity)
+	for_each_entity(entity)
 		entity->service = 0;
 }
 
