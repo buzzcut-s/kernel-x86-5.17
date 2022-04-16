@@ -1123,7 +1123,13 @@ static void bfq_activate_requeue_entity(struct bfq_entity *entity,
 					bool non_blocking_wait_rq,
 					bool requeue, bool expiration)
 {
-	for_each_entity_not_root(entity) {
+	for_each_entity(entity) {
+		bfq_update_groups_with_pending_reqs(entity);
+
+		/* root group is not in service tree */
+		if (is_root_entity(entity))
+			break;
+
 		__bfq_activate_requeue_entity(entity, non_blocking_wait_rq);
 
 		if (!bfq_update_next_in_service(entity->sched_data, entity,
@@ -1635,7 +1641,6 @@ void bfq_activate_bfqq(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 {
 	struct bfq_entity *entity = &bfqq->entity;
 
-	bfq_update_groups_with_pending_reqs(bfqq->entity.parent);
 	bfq_activate_requeue_entity(entity, bfq_bfqq_non_blocking_wait_rq(bfqq),
 				    false, false);
 	bfq_clear_bfqq_non_blocking_wait_rq(bfqq);
