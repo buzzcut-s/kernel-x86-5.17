@@ -307,7 +307,11 @@ static struct bfq_group *bfqg_parent(struct bfq_group *bfqg)
 
 struct bfq_group *bfqq_group(struct bfq_queue *bfqq)
 {
-	return container_of(bfqq->entity.parent, struct bfq_group, entity);
+	struct bfq_entity *group_entity = bfqq->entity.parent;
+
+	return group_entity ? container_of(group_entity, struct bfq_group,
+					   entity) :
+			      bfqq->bfqd->root_group;
 }
 
 /*
