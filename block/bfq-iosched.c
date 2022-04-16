@@ -985,19 +985,6 @@ void bfq_weights_tree_remove(struct bfq_data *bfqd,
 {
 	struct bfq_entity *entity = bfqq->entity.parent;
 
-	/*
-	 * grab a ref to prevent bfqq to be freed in
-	 * __bfq_weights_tree_remove
-	 */
-	bfqq->ref++;
-
-	/*
-	 * remove bfqq from weights tree first, so that how many queues have
-	 * pending requests in parent bfqg is updated.
-	 */
-	__bfq_weights_tree_remove(bfqd, bfqq,
-				  &bfqd->queue_weights_tree);
-
 	for_each_entity(entity) {
 		struct bfq_sched_data *sd = entity->my_sched_data;
 
@@ -1032,7 +1019,14 @@ void bfq_weights_tree_remove(struct bfq_data *bfqd,
 		}
 	}
 
-	bfq_put_queue(bfqq);
+	/*
+	 * Next function is invoked last, because it causes bfqq to be
+	 * freed if the following holds: bfqq is not in service and
+	 * has no dispatched request. DO NOT use bfqq after the next
+	 * function invocation.
+	 */
+	__bfq_weights_tree_remove(bfqd, bfqq,
+				  &bfqd->queue_weights_tree);
 }
 
 /*
