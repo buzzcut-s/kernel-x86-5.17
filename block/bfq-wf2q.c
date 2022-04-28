@@ -776,7 +776,7 @@ __bfq_entity_update_weight_prio(struct bfq_service_tree *old_st,
 		 * Add the entity, if it is not a weight-raised queue,
 		 * to the counter associated with its new weight.
 		 */
-		if (prev_weight != new_weight && bfqq)
+		if (prev_weight != new_weight && bfqq && bfqq->wr_coeff == 1)
 			bfq_weights_tree_add(bfqd, bfqq);
 
 		new_st->wsum += entity->weight;
@@ -1681,7 +1681,8 @@ void bfq_add_bfqq_busy(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	bfqd->busy_queues[bfqq->ioprio_class - 1]++;
 
 	if (!bfqq->dispatched)
-		bfq_weights_tree_add(bfqd, bfqq);
+		if (bfqq->wr_coeff == 1)
+			bfq_weights_tree_add(bfqd, bfqq);
 
 	if (bfqq->wr_coeff > 1)
 		bfqd->wr_busy_queues++;

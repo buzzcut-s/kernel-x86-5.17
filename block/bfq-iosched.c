@@ -134,8 +134,6 @@
 #include "bfq-iosched.h"
 #include "blk-wbt.h"
 
-#define BFQ_FAKE_WEIGHT_COUNTER ((void *) POISON_INUSE)
-
 #define BFQ_BFQQ_FNS(name)						\
 void bfq_mark_bfqq_##name(struct bfq_queue *bfqq)			\
 {									\
@@ -892,12 +890,6 @@ void bfq_weights_tree_add(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 	if (bfqq->weight_counter)
 		return;
 
-	if (bfqq->wr_coeff != 1) {
-		bfqq->weight_counter = BFQ_FAKE_WEIGHT_COUNTER;
-		bfqq->ref++;
-		return;
-	}
-
 	while (*new) {
 		struct bfq_weight_counter *__counter = container_of(*new,
 						struct bfq_weight_counter,
@@ -956,9 +948,6 @@ void __bfq_weights_tree_remove(struct bfq_data *bfqd, struct bfq_queue *bfqq)
 
 	if (!bfqq->weight_counter)
 		return;
-
-	if (bfqq->weight_counter == BFQ_FAKE_WEIGHT_COUNTER)
-		goto reset_entity_pointer;
 
 	root = &bfqd->queue_weights_tree;
 	bfqq->weight_counter->num_active--;
