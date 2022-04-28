@@ -979,6 +979,19 @@ static void __bfq_activate_entity(struct bfq_entity *entity,
 		entity->on_st_or_in_serv = true;
 	}
 
+#ifdef CONFIG_BFQ_GROUP_IOSCHED
+	if (!bfq_entity_to_bfqq(entity)) { /* bfq_group */
+		struct bfq_group *bfqg =
+			container_of(entity, struct bfq_group, entity);
+		struct bfq_data *bfqd = bfqg->bfqd;
+
+		if (!entity->in_groups_with_pending_reqs) {
+			entity->in_groups_with_pending_reqs = true;
+			bfqd->num_groups_with_pending_reqs++;
+		}
+	}
+#endif
+
 	bfq_update_fin_time_enqueue(entity, st, backshifted);
 }
 
