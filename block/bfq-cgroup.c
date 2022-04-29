@@ -850,9 +850,14 @@ static void bfq_reparent_children(struct bfq_data *bfqd, struct bfq_group *bfqg)
 {
 	struct bfq_queue *bfqq;
 	struct hlist_node *next;
+	struct bfq_group *parent;
+
+	parent = bfqg_parent(bfqg);
+	if (!parent)
+		parent = bfqd->root_group;
 
 	hlist_for_each_entry_safe(bfqq, next, &bfqg->children, children_node)
-		bfq_bfqq_move(bfqd, bfqq, bfqd->root_group);
+		bfq_bfqq_move(bfqd, bfqq, parent);
 }
 
 /**
